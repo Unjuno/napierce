@@ -104,8 +104,8 @@ Example output:
 {
   "generation_budget_seconds": 1200,
   "review_budget_seconds": 900,
-  "generation_p95_seconds": 30,
-  "review_p95_seconds": 90,
+  "generation_latency_seconds": 30,
+  "review_latency_seconds": 90,
   "max_generated_candidates": 40,
   "reviewable_candidates": 10,
   "oversample": 3,
@@ -113,7 +113,7 @@ Example output:
   "explore_candidates": 12,
   "refine_candidates": 18,
   "final_review_candidates": 10,
-  "strategy": "review_bounded_p95"
+  "strategy": "review_bounded_generation_p95_review_p95"
 }
 ```
 
