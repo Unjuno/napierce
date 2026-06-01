@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -28,6 +31,33 @@ test("CLI prints JSON plan", async () => {
   assert.equal(plan.planned_candidates, 30);
   assert.equal(plan.explore_candidates, 12);
   assert.equal(plan.refine_candidates, 18);
+});
+
+test("CLI summarizes JSONL events", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "napierce-"));
+  const eventsPath = join(dir, "events.jsonl");
+
+  await writeFile(
+    eventsPath,
+    [
+      JSON.stringify({ candidate_id: "cand_001", elapsed_seconds: 30, action: "reject", score: 1 }),
+      JSON.stringify({ candidate_id: "cand_002", elapsed_seconds: 60, action: "accept", score: 5 }),
+    ].join("\n"),
+  );
+
+  const { stdout } = await execFileAsync(process.execPath, [
+    "bin/napierce.js",
+    "summarize",
+    "--events",
+    eventsPath,
+    "--json",
+  ]);
+
+  const summary = JSON.parse(stdout);
+  assert.equal(summary.reviewed_candidates, 2);
+  assert.equal(summary.accepted_candidates, 1);
+  assert.equal(summary.mean_review_seconds, 45);
+  assert.equal(summary.stopping.should_stop, true);
 });
 
 test("CLI rejects unknown command", async () => {
