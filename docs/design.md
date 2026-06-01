@@ -363,7 +363,6 @@ Inputs:
 --criteria
 --out
 --reviewer
---json
 ```
 
 Behavior:
@@ -372,6 +371,8 @@ Behavior:
 - start timer when candidate is displayed,
 - ask for action and optional score,
 - write JSONL review events.
+
+`review` is interactive. It does not support `--json`; review events are written to `--out` as JSONL.
 
 ### 10.3 `napierce summarize`
 
@@ -478,7 +479,7 @@ MVP includes:
 - duration parsing,
 - embedded-text candidate JSONL input,
 - review-event JSONL output,
-- JSON output,
+- JSON output for `plan` and `summarize`,
 - human-readable CLI output,
 - plan calculation tests,
 - summary tests,
