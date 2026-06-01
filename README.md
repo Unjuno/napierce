@@ -202,5 +202,4 @@ The current goal is to build a minimal CLI that makes candidate generation and h
 
 ## License
 
-Apache-2.0 is intended for this project.
-A `LICENSE` file should be added before the first tagged release.
+Apache-2.0. See [LICENSE](LICENSE).
