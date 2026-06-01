@@ -58,3 +58,16 @@ test("mean and sd latency strategy", () => {
   assert.equal(plan.planned_candidates, 30);
   assert.equal(plan.strategy, "review_bounded_generation_mean_sd_review_mean_sd");
 });
+
+test("oversample must be at least one", () => {
+  assert.throws(
+    () => createPlan({
+      generationBudgetSeconds: 1200,
+      generationP95Seconds: 30,
+      reviewBudgetSeconds: 900,
+      reviewP95Seconds: 90,
+      oversample: 0.5,
+    }),
+    /oversample must be at least 1/,
+  );
+});
