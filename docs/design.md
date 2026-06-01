@@ -346,8 +346,9 @@ Inputs:
 ```text
 --candidates
 --criteria
---plan
 --out
+--reviewer
+--json
 ```
 
 Behavior:
@@ -355,8 +356,7 @@ Behavior:
 - show one candidate at a time,
 - start timer when candidate is displayed,
 - ask for action and optional score,
-- write JSONL review events,
-- show stopping recommendations.
+- write JSONL review events.
 
 ### 10.3 `napierce summarize`
 
@@ -365,6 +365,7 @@ Inputs:
 ```text
 --events
 --plan
+--json
 ```
 
 Outputs:
@@ -454,16 +455,20 @@ See [docs/research.md](research.md) for details.
 
 ## 14. MVP scope
 
-MVP should include:
+MVP includes:
 
 - `napierce plan`,
+- `napierce review`,
+- `napierce summarize`,
 - duration parsing,
+- review-event JSONL input/output,
 - JSON output,
 - human-readable CLI output,
 - plan calculation tests,
+- summary tests,
 - CLI smoke tests.
 
-MVP should not include:
+MVP does not include:
 
 - browser UI,
 - LLM API calls,
@@ -475,7 +480,6 @@ MVP should not include:
 
 ## 15. Open questions
 
-- Should `napierce review` be included after v0.1, or should v0.1 remain plan-only?
 - Should timing profiles be stored globally or per project?
 - Should artifact type be required for every candidate?
 - Should p95 be the default planning value?
