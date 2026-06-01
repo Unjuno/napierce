@@ -35,6 +35,12 @@ Napierce turns generation time, review time, and latency estimates into a bounde
 The goal is not to let an LLM optimize text or code indefinitely.
 The goal is to produce a bounded, diverse, reviewable candidate set for human judgment.
 
+## Documentation
+
+- [Design](docs/design.md): product design, CLI/online modes, data model, stopping conditions, and MVP scope.
+- [Research notes](docs/research.md): research basis for human review, evaluation limits, workload, and testability.
+- [Rationale](docs/rationale.md): classical `1/e` proof, review-bounded planning model, and claim boundaries.
+
 ## Human review timing
 
 For subjective artifacts such as prose, documentation, specifications, and prompts, final quality is judged by a human reader.
