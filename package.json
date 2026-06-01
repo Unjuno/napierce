@@ -1,0 +1,33 @@
+{
+  "name": "napierce",
+  "version": "0.1.0",
+  "description": "A CLI for planning human-review-bounded candidate generation.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "napierce": "./bin/napierce.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/napierce.js && node --check src/duration.js && node --check src/plan.js && node --check src/format.js"
+  },
+  "keywords": [
+    "ai",
+    "candidate-generation",
+    "human-review",
+    "review-budget",
+    "cli",
+    "optimal-stopping",
+    "one-over-e"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ]
+}
