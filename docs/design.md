@@ -259,6 +259,18 @@ It does not mean automatic adoption.
 
 ### 9.1 Candidate record
 
+MVP candidate records should embed the candidate text directly.
+
+Valid MVP fields for candidate text are:
+
+```text
+content
+text
+body
+```
+
+Example:
+
 ```json
 {
   "candidate_id": "cand_001",
@@ -266,7 +278,7 @@ It does not mean automatic adoption.
   "artifact_type": "readme_section",
   "source": "llm",
   "phase": "explore",
-  "content_path": "candidates/cand_001.md",
+  "content": "Candidate text to review.",
   "metadata": {
     "model": "unknown",
     "prompt_variant": "clarity",
@@ -274,6 +286,8 @@ It does not mean automatic adoption.
   }
 }
 ```
+
+`content_path` is not part of the MVP review input. File-backed candidates can be added later.
 
 ### 9.2 Review event record
 
@@ -309,7 +323,8 @@ It does not mean automatic adoption.
   "planned_candidates": 30,
   "explore_candidates": 12,
   "refine_candidates": 18,
-  "final_review_candidates": 10
+  "final_review_candidates": 10,
+  "strategy": "review_bounded_generation_p95_review_p95"
 }
 ```
 
@@ -461,7 +476,8 @@ MVP includes:
 - `napierce review`,
 - `napierce summarize`,
 - duration parsing,
-- review-event JSONL input/output,
+- embedded-text candidate JSONL input,
+- review-event JSONL output,
 - JSON output,
 - human-readable CLI output,
 - plan calculation tests,
@@ -471,6 +487,7 @@ MVP includes:
 MVP does not include:
 
 - browser UI,
+- file-backed `content_path` candidate loading,
 - LLM API calls,
 - automatic candidate generation,
 - automatic final judgment,
@@ -484,3 +501,4 @@ MVP does not include:
 - Should artifact type be required for every candidate?
 - Should p95 be the default planning value?
 - Should workload be a simple 1..5 score or a compact workload questionnaire?
+- Should file-backed candidates be supported through `content_path` in v0.2?
