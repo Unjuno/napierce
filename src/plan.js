@@ -3,7 +3,7 @@ export function createPlan(input) {
   const reviewBudgetSeconds = requirePositiveNumber(input.reviewBudgetSeconds, "reviewBudgetSeconds");
   const generationLatencySeconds = resolveLatency(input, "generation");
   const reviewLatencySeconds = resolveLatency(input, "review");
-  const oversample = input.oversample == null ? 3 : requirePositiveNumber(input.oversample, "oversample");
+  const oversample = input.oversample == null ? 3 : requireAtLeastNumber(input.oversample, "oversample", 1);
 
   const maxGeneratedCandidates = Math.floor(generationBudgetSeconds / generationLatencySeconds);
   const reviewableCandidates = Math.floor(reviewBudgetSeconds / reviewLatencySeconds);
@@ -70,6 +70,13 @@ function latencyStrategy(input) {
 function requirePositiveNumber(value, fieldName) {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     throw new Error(`${fieldName} must be a positive number.`);
+  }
+  return value;
+}
+
+function requireAtLeastNumber(value, fieldName, minimum) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < minimum) {
+    throw new Error(`${fieldName} must be at least ${minimum}.`);
   }
   return value;
 }
