@@ -10,6 +10,12 @@ It is built around one simple idea:
 Start from human review capacity, then plan AI candidate generation around it.
 ```
 
+The v0.1.0 workflow is:
+
+```text
+plan -> review -> summarize
+```
+
 ## 1. When to use Napierce
 
 Use Napierce when you want AI to produce several possible improvements, but you do not want to read an unlimited number of outputs.
@@ -66,7 +72,7 @@ The basic flow is:
 8. Generate or import candidates.
 9. Review candidates one by one.
 10. Record actions, scores, notes, and review time.
-11. Stop when the review plan says to stop.
+11. Run `napierce summarize` on the saved review events.
 12. Choose from the final reviewable set.
 ```
 
@@ -155,10 +161,11 @@ napierce plan \
   --generation-p95 30s \
   --review-budget 15m \
   --review-p95 90s \
-  --oversample 3
+  --oversample 3 \
+  --json
 ```
 
-Example result:
+Example JSON result:
 
 ```json
 {
@@ -247,7 +254,21 @@ Possible filters:
 
 The final set should be small enough for a human to read carefully.
 
-## 11. Step 8: Review candidates
+## 11. Step 8: Prepare candidate JSONL
+
+MVP candidate records must embed reviewable text directly in the JSONL record.
+
+Valid fields for candidate text are `content`, `text`, and `body`:
+
+```jsonl
+{"candidate_id":"cand_001","content":"First candidate text."}
+{"candidate_id":"cand_002","text":"Second candidate text."}
+{"candidate_id":"cand_003","body":"Third candidate text."}
+```
+
+File-backed candidate loading through `content_path` is outside v0.1.0.
+
+## 12. Step 9: Review candidates
 
 A CLI review session may look like this:
 
@@ -262,7 +283,7 @@ Action:
   s = skip
   m = maybe
   b = best so far
-  q = quit and summarize
+  q = quit
 
 Score 1-5:
 Note:
@@ -276,6 +297,7 @@ reject = not usable
 skip = not worth judging deeply
 maybe = possible candidate
 best_so_far = strongest candidate seen so far
+quit = stop the interactive review session
 ```
 
 Recommended score scale:
@@ -288,7 +310,17 @@ Recommended score scale:
 5 = strong candidate
 ```
 
-## 12. Step 9: Record timing
+Example command:
+
+```bash
+napierce review \
+  --candidates candidates.jsonl \
+  --out review-events.jsonl
+```
+
+`review` is interactive. It does not support `--json`; review events are written to `--out` as JSONL.
+
+## 13. Step 10: Record timing
 
 For each candidate, Napierce should record:
 
@@ -313,7 +345,25 @@ Example event:
 
 These records allow Napierce to estimate future review speed.
 
-## 13. Step 10: Stop correctly
+## 14. Step 11: Summarize review evidence
+
+After the review session, summarize the saved review events:
+
+```bash
+napierce summarize --events review-events.jsonl --json
+```
+
+The summary reports:
+
+- reviewed count,
+- accepted / maybe / rejected / skipped counts,
+- mean review time,
+- sample standard deviation,
+- p50 / p90 / p95 review time,
+- top candidates,
+- stopping reasons.
+
+## 15. Step 12: Stop correctly
 
 Stopping does not mean automatic adoption.
 
@@ -347,7 +397,7 @@ Stop reviewing. You reached the review budget and found a strong candidate.
 
 The human still makes the final decision.
 
-## 14. Online measurement, not browser UI
+## 16. Online measurement, not browser UI
 
 Napierce does not need a browser UI to be useful.
 
@@ -365,7 +415,7 @@ The CLI is the reference implementation.
 
 Other people can build a web UI later if they want. That is outside the core scope.
 
-## 15. How to use recorded data later
+## 17. How to use recorded data later
 
 After several sessions, Napierce can learn better timing estimates.
 
@@ -383,7 +433,7 @@ This is why timing records matter.
 
 They turn review capacity from a guess into measured data.
 
-## 16. Practical rules
+## 18. Practical rules
 
 Use these defaults at first:
 
@@ -404,7 +454,7 @@ Do not mix very different artifact types in one timing estimate.
 Do not let stopping mean automatic acceptance.
 ```
 
-## 17. Quick example
+## 19. Quick example
 
 Task:
 
@@ -421,7 +471,7 @@ clear, short, accurate, useful for a new developer
 Plan:
 
 ```bash
-napierce plan --generate-budget 20m --generation-p95 30s --review-budget 10m --review-p95 60s --oversample 3
+napierce plan --generate-budget 20m --generation-p95 30s --review-budget 10m --review-p95 60s --oversample 3 --json
 ```
 
 Result:
@@ -440,6 +490,6 @@ Decision:
 ```text
 Review the 10 candidates.
 Score and comment.
-Stop when the review budget is reached or a strong candidate is found.
+Run summarize on the saved review-events JSONL.
 Choose the final candidate manually.
 ```
