@@ -62,7 +62,8 @@ The shared file formats should remain simple enough for other tools to consume:
 7. Review candidates one by one in the CLI.
 8. Record timing, action, score, and notes.
 9. Stop when a review budget or stopping rule is reached.
-10. Summarize the evidence and show top candidates.
+10. Run summarize on the saved review event log.
+11. Show top candidates and stopping reasons.
 ```
 
 The final decision remains human.
@@ -187,6 +188,7 @@ reject
 skip
 maybe
 best_so_far
+quit
 ```
 
 Recommended score scale:
@@ -209,7 +211,7 @@ note: string
 
 ## 8. Stopping conditions
 
-Napierce should show stopping recommendations rather than silently stopping.
+Napierce should show stopping recommendations rather than silently adopting a candidate.
 
 Possible stopping conditions:
 
@@ -245,7 +247,13 @@ best_score_now - best_score_w_reviews_ago < epsilon
 
 ### 8.5 Human stops
 
-The reviewer can quit and summarize at any point.
+The reviewer can quit the interactive review session at any point.
+
+Quitting the review session only stops interaction. It does not automatically print a summary. To summarize current evidence, run:
+
+```bash
+napierce summarize --events review-events.jsonl
+```
 
 Stopping means:
 
