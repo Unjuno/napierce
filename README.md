@@ -42,6 +42,8 @@ Therefore, Napierce uses `N / e` as an exploration-budget rule:
 
 The point is to avoid endless agent iteration when the real limits are time, review attention, and decision quality.
 
+For the classical proof and the agent-side improvement conditions, see [docs/rationale.md](docs/rationale.md).
+
 ## Example
 
 Planned CLI shape:
