@@ -38,7 +38,7 @@ The goal is to produce a bounded, diverse, reviewable candidate set for human ju
 ## Documentation
 
 - [User guide](docs/user-guide.md): practical step-by-step guide for using Napierce.
-- [Design](docs/design.md): product design, CLI/online modes, data model, stopping conditions, and MVP scope.
+- [Design](docs/design.md): product design, CLI modes, data model, stopping conditions, and MVP scope.
 - [Research notes](docs/research.md): research basis for human review, evaluation limits, workload, and testability.
 - [Rationale](docs/rationale.md): classical `1/e` proof, review-bounded planning model, and claim boundaries.
 
@@ -85,9 +85,9 @@ The point is to avoid endless generation when the real limits are time, review a
 
 For the classical proof and the agent-side improvement conditions, see [docs/rationale.md](docs/rationale.md).
 
-## Example
+## Commands
 
-Planned CLI shape:
+### `napierce plan`
 
 ```bash
 napierce plan \
@@ -98,7 +98,7 @@ napierce plan \
   --oversample 3
 ```
 
-Example output:
+Example JSON output:
 
 ```json
 {
@@ -117,7 +117,24 @@ Example output:
 }
 ```
 
-In this example, AI could generate up to 40 candidates during the generation budget, but the human can review about 10 candidates during the review budget. Napierce therefore plans 30 generated candidates and requires the workflow to reduce them to 10 final review candidates.
+### `napierce review`
+
+```bash
+napierce review \
+  --candidates candidates.jsonl \
+  --out review-events.jsonl \
+  --criteria criteria.md
+```
+
+This shows candidates one at a time in the CLI and records elapsed review seconds, action, optional score, and optional note as JSONL.
+
+### `napierce summarize`
+
+```bash
+napierce summarize --events review-events.jsonl --json
+```
+
+This reports review counts, mean review time, standard deviation, p50/p90/p95 review time, top candidates, and stopping reasons.
 
 ## Use cases
 
@@ -140,20 +157,22 @@ Napierce will not initially:
 - replace human review,
 - claim a universal optimal stopping theorem for all AI workflows.
 
-The first version should stay small: calculate a bounded candidate plan and report it clearly.
+The first version should stay small: calculate bounded candidate plans, record review events, and summarize review evidence.
 
-## Planned MVP
+## MVP
 
-The first usable version should provide:
+The current CLI provides:
 
 - `napierce plan` for calculating bounded candidate plans,
+- `napierce review` for recording human review events,
+- `napierce summarize` for aggregating review timings and scores,
 - support for generation budget and generation latency,
 - support for review budget and review latency,
 - support for `--p95`, `--mean`, `--sd`, and safety factors,
 - support for an oversampling ratio,
 - JSON output for scripts and agent tools,
 - human-readable output for CLI use,
-- tests for duration parsing and budget calculation.
+- tests for duration parsing, budget calculation, summarization, and CLI smoke behavior.
 
 ## Formula
 
@@ -196,9 +215,9 @@ This is still a heuristic for practical planning. It reuses the `1/e` split as a
 
 ## Status
 
-Pre-implementation / experimental.
+Experimental CLI MVP.
 
-The current goal is to build a minimal CLI that makes candidate generation and human review limits explicit, reproducible, and easy to inspect.
+The current goal is to make candidate generation and human review limits explicit, reproducible, and easy to inspect.
 
 ## License
 
