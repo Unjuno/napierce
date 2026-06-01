@@ -41,6 +41,8 @@ It does not need to call an LLM API.
 
 It does not need to run an AI agent directly.
 
+It does not require a browser UI.
+
 Instead, it helps you decide:
 
 - how many candidates to generate,
@@ -162,8 +164,8 @@ Example result:
 {
   "generation_budget_seconds": 1200,
   "review_budget_seconds": 900,
-  "generation_p95_seconds": 30,
-  "review_p95_seconds": 90,
+  "generation_latency_seconds": 30,
+  "review_latency_seconds": 90,
   "max_generated_candidates": 40,
   "reviewable_candidates": 10,
   "oversample": 3,
@@ -171,7 +173,7 @@ Example result:
   "explore_candidates": 12,
   "refine_candidates": 18,
   "final_review_candidates": 10,
-  "strategy": "review_bounded_p95"
+  "strategy": "review_bounded_generation_p95_review_p95"
 }
 ```
 
@@ -345,23 +347,23 @@ Stop reviewing. You reached the review budget and found a strong candidate.
 
 The human still makes the final decision.
 
-## 14. Online workflow
+## 14. Online measurement, not browser UI
 
-The online version should follow the same flow as the CLI.
+Napierce does not need a browser UI to be useful.
 
-A browser interface should:
+In this project, online means that review timing estimates can be updated as new review events are recorded.
 
-- show one candidate at a time,
-- start timing automatically,
-- provide action buttons,
-- allow score and notes,
-- show remaining review time,
-- show progress toward the reviewable candidate quota,
-- export the review log as JSONL.
+Example:
 
-The online version should not need a different theory.
+```text
+new review event -> update mean review time
+new review event -> update standard deviation
+new review event -> update p95 estimate
+```
 
-It should use the same plan and event schema as the CLI.
+The CLI is the reference implementation.
+
+Other people can build a web UI later if they want. That is outside the core scope.
 
 ## 15. How to use recorded data later
 
