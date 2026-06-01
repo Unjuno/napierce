@@ -4,11 +4,18 @@ Napierce is a small CLI for planning human-review-bounded candidate generation.
 
 It helps you decide how many AI-generated candidates to create, how many should be used for broad exploration, and how many a human can realistically review under a fixed time budget.
 
-Napierce is useful for writing, documentation, prompt improvement, specification cleanup, UI copy refinement, code-repair review, and other workflows where AI can generate more candidates than humans can read.
+Napierce is **CLI-first** and **CLI-complete** for the v0.1.0 workflow:
 
-It is not a web search tool.
+```text
+plan -> review -> summarize
+```
+
+It is useful for writing, documentation, prompt improvement, specification cleanup, UI copy refinement, code-repair review, and other workflows where AI can generate more candidates than humans can read.
+
+Napierce is not a web search tool.
 It is not a direct implementation of the classical secretary problem.
 It is not mainly an AI-agent runner.
+It does not call LLM APIs or generate candidates by itself.
 
 Napierce treats the `1/e` idea as a practical budgeting heuristic for deciding where broad exploration should end and review-gated refinement should begin.
 
@@ -34,6 +41,52 @@ Napierce turns generation time, review time, and latency estimates into a bounde
 
 The goal is not to let an LLM optimize text or code indefinitely.
 The goal is to produce a bounded, diverse, reviewable candidate set for human judgment.
+
+## Quick start
+
+From a local checkout, run the CLI directly with Node:
+
+```bash
+node bin/napierce.js --help
+```
+
+Create a candidate plan:
+
+```bash
+node bin/napierce.js plan \
+  --generate-budget 20m \
+  --generation-p95 30s \
+  --review-budget 15m \
+  --review-p95 90s \
+  --oversample 3 \
+  --json
+```
+
+Create a small candidate file:
+
+```bash
+cat > candidates.jsonl <<'EOF'
+{"candidate_id":"cand_001","content":"First candidate text."}
+{"candidate_id":"cand_002","text":"Second candidate text."}
+{"candidate_id":"cand_003","body":"Third candidate text."}
+EOF
+```
+
+Review candidates interactively:
+
+```bash
+node bin/napierce.js review \
+  --candidates candidates.jsonl \
+  --out review-events.jsonl
+```
+
+Then summarize the saved review events:
+
+```bash
+node bin/napierce.js summarize --events review-events.jsonl --json
+```
+
+If Napierce is installed as a package, use `napierce` instead of `node bin/napierce.js`.
 
 ## Documentation
 
@@ -96,7 +149,8 @@ napierce plan \
   --generation-p95 30s \
   --review-budget 15m \
   --review-p95 90s \
-  --oversample 3
+  --oversample 3 \
+  --json
 ```
 
 Example JSON output:
@@ -129,6 +183,8 @@ napierce review \
 
 This shows candidates one at a time in the CLI and records elapsed review seconds, action, optional score, and optional note as JSONL.
 
+`review` is interactive. It does not support `--json`; use `napierce summarize --events review-events.jsonl --json` after the review session when JSON summary output is needed.
+
 ### `napierce summarize`
 
 ```bash
@@ -136,6 +192,20 @@ napierce summarize --events review-events.jsonl --json
 ```
 
 This reports review counts, mean review time, standard deviation, p50/p90/p95 review time, top candidates, and stopping reasons.
+
+## Candidate input
+
+MVP candidate records must embed reviewable text directly in the JSONL record.
+
+Valid text fields:
+
+```jsonl
+{"candidate_id":"cand_001","content":"First candidate text."}
+{"candidate_id":"cand_002","text":"Second candidate text."}
+{"candidate_id":"cand_003","body":"Third candidate text."}
+```
+
+File-backed candidate loading through `content_path` is not part of v0.1.0.
 
 ## Use cases
 
@@ -171,7 +241,7 @@ The current CLI provides:
 - support for review budget and review latency,
 - support for `--p95`, `--mean`, `--sd`, and safety factors,
 - support for an oversampling ratio,
-- JSON output for scripts and agent tools,
+- JSON output for scripts and agent tools on `plan` and `summarize`,
 - human-readable output for CLI use,
 - tests for duration parsing, budget calculation, summarization, and CLI smoke behavior.
 
