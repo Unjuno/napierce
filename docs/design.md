@@ -16,7 +16,7 @@ Napierce should therefore optimize for a finite, reviewable candidate set rather
 
 Napierce is not primarily an AI-agent runner.
 
-It is a planning and logging tool for human decision workflows that use AI-generated candidates.
+It is a CLI planning and logging tool for human decision workflows that use AI-generated candidates.
 
 The first product target is:
 
@@ -25,13 +25,15 @@ Given generation constraints and human review constraints,
 produce a bounded candidate plan and record review evidence.
 ```
 
-## 2. Supported modes
+## 2. Supported mode
 
-Napierce should support both CLI and online use.
+Napierce should be CLI-first and CLI-complete.
 
-### 2.1 CLI mode
+There is no need to ship a browser UI in this project.
 
-CLI mode is for local workflows.
+If Napierce proves useful, other people can build UIs on top of its JSON and JSONL formats.
+
+The word "online" in this project should mean online measurement or online updating of timing profiles, not a web application requirement.
 
 Expected commands:
 
@@ -41,18 +43,12 @@ napierce review
 napierce summarize
 ```
 
-### 2.2 Online mode
-
-Online mode is for browser-based human review.
-
-The online interface should use the same data model as the CLI:
+The shared file formats should remain simple enough for other tools to consume:
 
 - candidate records,
 - review event records,
 - plan records,
 - summary records.
-
-The online version should be able to export JSONL logs compatible with CLI analysis.
 
 ## 3. Main workflow
 
@@ -63,7 +59,7 @@ The online version should be able to export JSONL logs compatible with CLI analy
 4. Compute generated candidate count.
 5. Compute reviewable candidate count.
 6. Generate or import candidates.
-7. Review candidates one by one.
+7. Review candidates one by one in the CLI.
 8. Record timing, action, score, and notes.
 9. Stop when a review budget or stopping rule is reached.
 10. Summarize the evidence and show top candidates.
@@ -305,8 +301,8 @@ It does not mean automatic adoption.
   "task_id": "task_001",
   "generation_budget_seconds": 1200,
   "review_budget_seconds": 900,
-  "generation_p95_seconds": 30,
-  "review_p95_seconds": 90,
+  "generation_latency_seconds": 30,
+  "review_latency_seconds": 90,
   "oversample": 3,
   "max_generated_candidates": 40,
   "reviewable_candidates": 10,
@@ -380,24 +376,24 @@ Outputs:
 - top candidates,
 - stopping-rule status.
 
-## 11. Online requirements
+## 11. Online measurement
 
-Minimum online mode:
+Napierce can update timing estimates as review logs accumulate.
 
-- paste or upload candidates,
-- define task and criteria,
-- show one candidate at a time,
-- record timing automatically,
-- click actions,
-- optional score,
-- optional note,
-- show remaining review budget,
-- show stopping recommendation,
-- export JSONL event log.
+This is online measurement, not a required web UI.
 
-The first online version can be local-first and accountless.
+Examples:
 
-It should not require a server database for the initial prototype.
+```text
+new review event -> update mean review time
+new review event -> update standard deviation
+new review event -> update p95 estimate
+new task type -> update artifact-specific timing profile
+```
+
+The CLI should remain the reference implementation.
+
+External UIs may consume the JSONL logs later, but they are outside the MVP.
 
 ## 12. Mathematical verification
 
@@ -462,14 +458,14 @@ MVP should include:
 
 - `napierce plan`,
 - duration parsing,
-- review-event JSONL schema,
-- summary statistics,
 - JSON output,
 - human-readable CLI output,
-- design-compatible data model.
+- plan calculation tests,
+- CLI smoke tests.
 
 MVP should not include:
 
+- browser UI,
 - LLM API calls,
 - automatic candidate generation,
 - automatic final judgment,
@@ -479,8 +475,7 @@ MVP should not include:
 
 ## 15. Open questions
 
-- Should `napierce review` be included in v0.1, or should v0.1 only implement `plan`?
-- Should online mode be a separate package or a later web app?
+- Should `napierce review` be included after v0.1, or should v0.1 remain plan-only?
 - Should timing profiles be stored globally or per project?
 - Should artifact type be required for every candidate?
 - Should p95 be the default planning value?
