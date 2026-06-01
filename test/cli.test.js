@@ -60,6 +60,21 @@ test("CLI summarizes JSONL events", async () => {
   assert.equal(summary.stopping.should_stop, true);
 });
 
+test("CLI review rejects JSON mode", async () => {
+  await assert.rejects(
+    () => execFileAsync(process.execPath, [
+      "bin/napierce.js",
+      "review",
+      "--candidates",
+      "candidates.jsonl",
+      "--out",
+      "review-events.jsonl",
+      "--json",
+    ]),
+    /--json is not supported for interactive review/,
+  );
+});
+
 test("CLI rejects unknown command", async () => {
   await assert.rejects(
     () => execFileAsync(process.execPath, ["bin/napierce.js", "unknown"]),
