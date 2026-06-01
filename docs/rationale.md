@@ -2,14 +2,23 @@
 
 This document explains the idea behind Napierce.
 
-Napierce uses the classical `1/e` split as a practical exploration-budget rule for bounded AI-agent iterations.
+Napierce is not mainly an agent runner. It is a planning tool for human-review-bounded candidate generation.
 
-It is important to separate two claims:
+The core problem is simple:
+
+```text
+AI can generate candidates faster than humans can read, compare, and judge them.
+```
+
+Therefore the main constraint is often not generation speed. The main constraint is human review capacity.
+
+Napierce uses time budgets, timing measurements, and a `1/e`-inspired exploration split to produce a finite candidate plan.
+
+It is important to separate three claims:
 
 1. The classical secretary problem has a proof under its own assumptions.
-2. Napierce does not assume every AI-agent workflow satisfies those assumptions.
-
-Napierce uses the same split because it gives a simple default for deciding how much of a fixed budget should be spent learning the task before focusing on refinement.
+2. Napierce does not assume every AI workflow satisfies those assumptions.
+3. Human-review-bounded workflows can still be measured and tested mathematically.
 
 ## 1. Classical 1/e result
 
@@ -109,13 +118,13 @@ Thus the classical asymptotic rule is to observe about `N / e` candidates first.
 
 ## 2. Why Napierce does not directly copy the secretary problem
 
-AI-agent iterations differ from the classical setting.
+AI-generated candidates differ from the classical secretary setting.
 
-In most agent workflows:
+In most AI workflows:
 
 - candidates can be saved,
 - candidates can be compared later,
-- candidates can be rescored with tests or human review,
+- candidates can be filtered by tests or human review,
 - prompts and context can change,
 - the goal is often sufficient quality under a time limit, not irreversible selection of the single best item.
 
@@ -123,60 +132,168 @@ Therefore, Napierce does not discard the first `N / e` outputs.
 
 Instead:
 
-- the first phase explores the task and collects candidates,
+- the first phase explores the task and collects diverse candidates,
 - the second phase refines promising directions,
-- the final selection is made from all saved candidates.
+- the final review set is selected from all saved candidates,
+- the human chooses from a finite reviewable set.
 
-## 3. Agent-side improvement condition
+## 3. Human review is the binding constraint
 
-Napierce can support a useful improvement claim, but only under explicit conditions.
+For writing, documentation, prompts, specifications, and many code-review workflows, final quality is judged by a human.
 
-It should not claim universal optimality.
+Machine checks can help with length, structure, tests, duplicate removal, and obvious rule violations. They cannot fully replace human judgment of purpose, clarity, tone, intent, and reader fit.
 
-### 3.1 Variables
+So Napierce treats human review time as first-class data.
+
+A workflow may measure review events such as:
+
+- candidate opened,
+- candidate read,
+- candidate skipped,
+- candidate accepted,
+- candidate rejected,
+- next candidate clicked.
+
+From these events, Napierce can estimate:
+
+- mean review time,
+- standard deviation,
+- p50 review time,
+- p90 review time,
+- p95 review time,
+- reviewable candidate count under a fixed review budget.
+
+Different artifacts should have different timing profiles. A short label, a paragraph rewrite, a README section, and a code patch are not the same review unit.
+
+## 4. Review-bounded planning model
+
+### 4.1 Variables
 
 | Symbol | Meaning | Unit | Definition | Type |
 |---|---:|---:|---|---|
-| `T` | available time budget | seconds | user- or system-defined time limit | scalar |
-| `L` | safe latency per iteration | seconds / iteration | measured p95 or conservative estimate | scalar |
-| `N` | maximum iterations | iterations | `floor(T / L)` | integer |
-| `r` | exploration iterations | iterations | `ceil(N / e)` | integer |
-| `q_i` | quality of candidate `i` | score | evaluator, tests, or human review | scalar |
-| `B_k` | best score after `k` iterations | score | `max(q_1, ..., q_k)` | scalar |
-| `C` | cost per iteration | seconds, money, or review burden | task-dependent | scalar |
-| `V(q)` | utility of quality score `q` | utility | user-defined value function | scalar |
+| `T_g` | generation time budget | seconds | time available for generating candidates | scalar |
+| `L_g` | safe generation latency | seconds / candidate | p95 or conservative generation time | scalar |
+| `T_r` | human review time budget | seconds | time available for human review | scalar |
+| `L_r` | safe human review latency | seconds / candidate | p95 or conservative review time | scalar |
+| `rho` | oversampling ratio | dimensionless | generated candidates per reviewable candidate | scalar |
+| `G_max` | maximum generated candidates | candidates | `floor(T_g / L_g)` | integer |
+| `K` | reviewable candidates | candidates | `floor(T_r / L_r)` | integer |
+| `N` | planned generated candidates | candidates | `min(G_max, ceil(rho * K))` | integer |
+| `r` | exploration candidates | candidates | `ceil(N / e)` | integer |
+| `F` | final review candidates | candidates | normally `K` | integer |
 
-### 3.2 Minimal improvement criterion
-
-A Napierce-style workflow is useful if it improves quality per bounded resource.
-
-One measurable criterion is:
+### 4.2 Candidate count formulas
 
 ```text
-E[V(B_N^napierce)] - Cost_N^napierce
-  >
-E[V(B_N^baseline)] - Cost_N^baseline
+G_max = floor(T_g / L_g)
+K = floor(T_r / L_r)
+N = min(G_max, ceil(rho * K))
+r = ceil(N / e)
+refine = N - r
+F = K
 ```
 
-where the baseline may be:
+Unit check:
 
-- running the same prompt repeatedly,
-- stopping by intuition,
-- asking the agent to keep improving until the user gets tired,
-- using a fixed arbitrary number of iterations.
+```text
+T_g / L_g = seconds / (seconds / candidate) = candidates
+T_r / L_r = seconds / (seconds / candidate) = candidates
+```
 
-### 3.3 Sufficient condition
+So both generated and reviewable candidate counts are dimensionally consistent.
+
+### 4.3 Review latency estimation
+
+Review latency may be estimated from measured samples:
+
+```text
+L_r = p95(review_time_samples)
+```
+
+or from a conservative mean-plus-deviation rule:
+
+```text
+L_r = mean(review_time_samples) + lambda * standard_deviation(review_time_samples)
+```
+
+The p95 approach is usually safer when review times have a long right tail.
+
+## 5. Mathematical testability
+
+Napierce can be tested as a workflow rule.
+
+It does not need to prove universal optimality to be useful. It needs to outperform or clarify a baseline under measurable constraints.
+
+### 5.1 Baselines
+
+Possible baselines include:
+
+- subjective stopping,
+- fixed candidate count,
+- generate as many as possible,
+- ask the agent to keep improving until the human gets tired,
+- generate one candidate and edit manually.
+
+### 5.2 Measured outcomes
+
+A comparison can measure:
+
+- final human-rated quality,
+- total human review time,
+- number of generated candidates,
+- number of reviewed candidates,
+- acceptance rate,
+- time to accepted candidate,
+- fatigue or confidence rating,
+- whether the final candidate satisfies the stated purpose.
+
+### 5.3 Improvement criterion
+
+Let:
+
+| Symbol | Meaning | Unit | Definition | Type |
+|---|---:|---:|---|---|
+| `Q` | final human-rated quality | score | human rating or rubric score | scalar |
+| `R` | human review time | seconds | measured review time | scalar |
+| `C_g` | generation cost | money, tokens, or seconds | cost of candidate generation | scalar |
+| `H` | human burden score | score | fatigue, confidence loss, or subjective load | scalar |
+| `V(Q)` | utility of final quality | utility | user-defined value function | scalar |
+| `a`, `b`, `c` | cost weights | utility/unit | user-defined penalty weights | scalars |
+
+A simple net utility can be defined as:
+
+```text
+U = V(Q) - a * R - b * C_g - c * H
+```
+
+Napierce improves over a baseline if:
+
+```text
+E[U_napierce] > E[U_baseline]
+```
+
+or, for a simpler quality-per-review-time metric:
+
+```text
+E[Q_napierce / R_napierce] > E[Q_baseline / R_baseline]
+```
+
+This is mathematically testable with repeated tasks, recorded timings, and human ratings.
+
+### 5.4 Sufficient condition
 
 A sufficient condition for Napierce to improve expected net utility is:
 
 ```text
-E[V(B_N^napierce)] >= E[V(B_N^baseline)] + epsilon
+E[V(Q_napierce)] >= E[V(Q_baseline)] + epsilon
 ```
 
 and:
 
 ```text
-Cost_N^napierce <= Cost_N^baseline + delta
+E[a * R_napierce + b * C_g_napierce + c * H_napierce]
+  <=
+E[a * R_baseline + b * C_g_baseline + c * H_baseline] + delta
 ```
 
 with:
@@ -187,51 +304,29 @@ epsilon > delta
 
 In words:
 
-Napierce improves the workflow if the expected value gained from better candidate selection exceeds the extra cost of planning, logging, and phase separation.
+Napierce improves the workflow if the expected value gained from better or more reviewable candidates exceeds the additional generation, review, and coordination cost.
 
-### 3.4 Practical stopping condition
-
-Let the expected next improvement at step `k` be:
-
-```text
-EI_k = E[max(0, q_{k+1} - B_k) | history up to k]
-```
-
-Continue if:
-
-```text
-EI_k > marginal_cost_k
-```
-
-Stop if:
-
-```text
-EI_k <= marginal_cost_k
-```
-
-This is not the classical secretary proof.
-
-It is the agent-side decision rule: keep iterating only while the expected improvement is worth the additional time, compute, and review burden.
-
-## 4. What can be claimed
+## 6. What can be claimed
 
 Napierce may claim:
 
-- it makes iteration budgets explicit,
-- it converts time limits into trial counts,
+- it makes generation and review budgets explicit,
+- it converts review time into a finite reviewable candidate count,
+- it records timing data for later calibration,
 - it gives a simple default exploration/refinement split,
-- it helps prevent endless agent iteration,
-- it supports reproducible comparison between agent workflows.
+- it helps prevent endless AI candidate generation,
+- it supports reproducible comparison between candidate-generation workflows.
 
 Napierce should not claim:
 
 - universal optimality,
-- that every agent workflow satisfies the secretary problem,
+- that every AI workflow satisfies the secretary problem,
 - that `N / e` is always the best split,
 - that human review can be removed,
-- that quality can be measured without task-specific assumptions.
+- that subjective quality can be fully automated,
+- that one timing profile applies to all artifact types.
 
-## 5. References
+## 7. References
 
 - Thomas S. Ferguson, "Who Solved the Secretary Problem?", Statistical Science, 1989.
 - P. R. Freeman, "The Secretary Problem and its Extensions: A Review", International Statistical Review, 1983.
