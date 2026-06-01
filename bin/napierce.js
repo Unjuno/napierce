@@ -37,6 +37,10 @@ async function main(argv) {
   }
 
   if (command === "review") {
+    if (options.json === true) {
+      throw new Error("--json is not supported for interactive review. Review events are written to --out as JSONL.");
+    }
+
     const candidatesPath = requiredString(options, "candidates");
     const outPath = requiredString(options, "out");
     const candidates = await readJsonl(candidatesPath);
@@ -47,12 +51,7 @@ async function main(argv) {
       reviewerId: options.reviewer ?? "local_user",
     });
 
-    const result = {
-      written_events: written.length,
-      out: outPath,
-    };
-
-    printOutput(result, options, (value) => `Recorded ${value.written_events} review events to ${value.out}`);
+    console.log(`Recorded ${written.length} review events to ${outPath}`);
     return;
   }
 
@@ -145,7 +144,7 @@ function printHelp() {
 
 Usage:
   napierce plan --generate-budget 20m --generation-p95 30s --review-budget 15m --review-p95 90s [--oversample 3] [--json]
-  napierce review --candidates candidates.jsonl --out review-events.jsonl [--criteria criteria.md] [--json]
+  napierce review --candidates candidates.jsonl --out review-events.jsonl [--criteria criteria.md]
   napierce summarize --events review-events.jsonl [--plan plan.json] [--json]
 
 Latency options:
