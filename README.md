@@ -37,6 +37,7 @@ The goal is to produce a bounded, diverse, reviewable candidate set for human ju
 
 ## Documentation
 
+- [User guide](docs/user-guide.md): practical step-by-step guide for using Napierce.
 - [Design](docs/design.md): product design, CLI/online modes, data model, stopping conditions, and MVP scope.
 - [Research notes](docs/research.md): research basis for human review, evaluation limits, workload, and testability.
 - [Rationale](docs/rationale.md): classical `1/e` proof, review-bounded planning model, and claim boundaries.
